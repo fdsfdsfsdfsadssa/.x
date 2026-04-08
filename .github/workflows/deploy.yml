@@ -1,0 +1,23 @@
+name: Deploy to Pterodactyl
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: kjkfdsfg-dfsfds.fcba8df2
+          server: node2.lunes.host
+          port: 2022
+          password: ${{ secrets.FTP_PASSWORD }}
+          local_path: './*'
+          remote_path: '/'
+          sftp_only: true
+          delete_remote_files: false # عشان ميمسحش ملفات السيرفر الأساسية
