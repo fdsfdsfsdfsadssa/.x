@@ -2,48 +2,117 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة الرسائل الخاصة</title>
+    <title>خزنة الرسائل الاحترافية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
-    <nav class="border-b border-slate-800 p-5 flex justify-between items-center bg-[#1e293b]">
-        <h1 class="text-xl font-bold text-blue-400"><i class="fas fa-user-shield ml-2"></i> لوحة التحكم الآمنة</h1>
-        <button onclick="location.href='/auth/google'" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-sm transition">
-            <i class="fab fa-google ml-1"></i> ربط حساب جديد
-        </button>
-    </nav>
+<body class="bg-[#0b0f19] text-slate-200 font-sans overflow-hidden h-screen">
 
-    <div class="max-w-4xl mx-auto p-6">
-        <div id="status" class="text-center mb-8 p-4 bg-slate-800 rounded-xl border border-slate-700">
-            جاري فحص حالة الاتصال...
+    <div id="site-login-screen" class="fixed inset-0 bg-[#0b0f19] z-50 flex items-center justify-center">
+        <div class="bg-[#161b22] p-8 rounded-2xl border border-slate-700 w-96 text-center">
+            <i class="fas fa-vault text-5xl text-blue-500 mb-4"></i>
+            <h2 class="text-2xl font-bold mb-6">الدخول للخزنة</h2>
+            <input type="password" id="site-pass" placeholder="كلمة المرور" class="w-full bg-[#0d1117] border border-slate-600 p-3 rounded-lg mb-4 text-center">
+            <button onclick="loginToSite()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg font-bold">فتح</button>
         </div>
-        
-        <div id="email-container" class="space-y-4">
+    </div>
+
+    <div class="flex h-full">
+        <aside class="w-64 bg-[#161b22] border-l border-slate-800 p-4 flex flex-col">
+            <h2 class="text-blue-400 font-bold mb-6 border-b border-slate-700 pb-2">الحسابات المربوطة</h2>
+            <div id="accounts-list" class="flex-grow space-y-2 overflow-y-auto">
+                </div>
+            <button onclick="addNewAccount()" class="mt-4 bg-slate-700 hover:bg-slate-600 p-2 rounded text-sm">
+                <i class="fas fa-plus ml-1"></i> ربط حساب جديد
+            </button>
+        </aside>
+
+        <main class="flex-grow flex flex-col">
+            <header class="bg-[#161b22] p-4 border-b border-slate-800 flex justify-between items-center">
+                <h1 id="current-view-title" class="font-bold">يرجى اختيار حساب</h1>
+                <div id="loader" class="hidden"><i class="fas fa-spinner fa-spin"></i></div>
+            </header>
+            
+            <div id="emails-area" class="flex-grow overflow-y-auto p-4 space-y-3">
+                <div class="text-center text-slate-500 mt-20">لا يوجد بيانات لعرضها</div>
             </div>
+        </main>
+    </div>
+
+    <div id="msg-modal" class="fixed inset-0 bg-black/80 hidden z-40 p-10 overflow-y-auto">
+        <div class="bg-[#161b22] max-w-4xl mx-auto p-8 rounded-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 left-4 text-2xl">&times;</button>
+            <div id="msg-body" class="mt-6 leading-relaxed"></div>
+        </div>
     </div>
 
     <script>
-        async function load() {
-            const res = await fetch('/api/emails');
-            const statusDiv = document.getElementById('status');
-            const container = document.getElementById('email-container');
+        let selectedEmail = "";
 
+        async function loginToSite() {
+            const password = document.getElementById('site-pass').value;
+            const res = await fetch('/api/site-login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ password })
+            });
             if (res.ok) {
-                const emails = await res.json();
-                statusDiv.innerHTML = `<span class="text-green-400">● متصل وجاهز</span>`;
-                container.innerHTML = emails.map(e => `
-                    <div class="bg-[#1e293b] p-5 rounded-xl border border-slate-800 hover:border-blue-500 transition cursor-pointer">
-                        <h3 class="text-blue-300 font-semibold mb-2">${e.subject}</h3>
-                        <p class="text-slate-400 text-sm line-clamp-2">${e.snippet}</p>
-                    </div>
-                `).join('');
-            } else {
-                statusDiv.innerHTML = `<span class="text-yellow-400 italic">يرجى تسجيل الدخول لعرض الرسائل</span>`;
+                document.getElementById('site-login-screen').classList.add('hidden');
+                loadAccounts();
+            } else alert("كلمة المرور خطأ!");
+        }
+
+        async function loadAccounts() {
+            const res = await fetch('/api/my-accounts');
+            const accounts = await res.json();
+            const list = document.getElementById('accounts-list');
+            list.innerHTML = accounts.map(acc => `
+                <div onclick="selectAccount('${acc.email}')" class="p-3 bg-[#0d1117] rounded-lg border border-slate-700 hover:border-blue-500 cursor-pointer transition">
+                    <div class="text-xs text-slate-400 truncate">${acc.email}</div>
+                </div>
+            `).join('');
+        }
+
+        async function selectAccount(email) {
+            selectedEmail = email;
+            document.getElementById('current-view-title').innerText = email;
+            document.getElementById('loader').classList.remove('hidden');
+            const res = await fetch(`/api/emails/${email}`);
+            const data = await res.json();
+            document.getElementById('loader').classList.add('hidden');
+            
+            document.getElementById('emails-area').innerHTML = data.map(e => `
+                <div onclick="readEmail('${e.id}')" class="bg-[#161b22] p-4 rounded-xl border border-slate-800 hover:bg-slate-800 transition cursor-pointer">
+                    <div class="text-blue-400 text-xs mb-1 font-bold">${e.from}</div>
+                    <div class="font-bold text-slate-100">${e.subject}</div>
+                    <div class="text-slate-400 text-sm truncate">${e.snippet}</div>
+                </div>
+            `).join('');
+        }
+
+        async function readEmail(id) {
+            const res = await fetch(`/api/email-detail/${selectedEmail}/${id}`);
+            const data = await res.json();
+            document.getElementById('msg-body').innerText = data.body;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('msg-modal').classList.add('hidden'); }
+
+        async function addNewAccount() {
+            const res = await fetch('/auth/google/url');
+            const { url } = await res.json();
+            window.open(url, '_blank');
+            const code = prompt("سجل دخول في النافذة الجديدة، ثم الصق الكود هنا:");
+            if (code) {
+                await fetch('/api/confirm-google', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ code })
+                });
+                loadAccounts();
             }
         }
-        load();
     </script>
 </body>
 </html>
