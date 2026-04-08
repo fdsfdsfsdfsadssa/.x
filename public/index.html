@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الرسائل الخاصة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
+    <nav class="border-b border-slate-800 p-5 flex justify-between items-center bg-[#1e293b]">
+        <h1 class="text-xl font-bold text-blue-400"><i class="fas fa-user-shield ml-2"></i> لوحة التحكم الآمنة</h1>
+        <button onclick="location.href='/auth/google'" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-sm transition">
+            <i class="fab fa-google ml-1"></i> ربط حساب جديد
+        </button>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-6">
+        <div id="status" class="text-center mb-8 p-4 bg-slate-800 rounded-xl border border-slate-700">
+            جاري فحص حالة الاتصال...
+        </div>
+        
+        <div id="email-container" class="space-y-4">
+            </div>
+    </div>
+
+    <script>
+        async function load() {
+            const res = await fetch('/api/emails');
+            const statusDiv = document.getElementById('status');
+            const container = document.getElementById('email-container');
+
+            if (res.ok) {
+                const emails = await res.json();
+                statusDiv.innerHTML = `<span class="text-green-400">● متصل وجاهز</span>`;
+                container.innerHTML = emails.map(e => `
+                    <div class="bg-[#1e293b] p-5 rounded-xl border border-slate-800 hover:border-blue-500 transition cursor-pointer">
+                        <h3 class="text-blue-300 font-semibold mb-2">${e.subject}</h3>
+                        <p class="text-slate-400 text-sm line-clamp-2">${e.snippet}</p>
+                    </div>
+                `).join('');
+            } else {
+                statusDiv.innerHTML = `<span class="text-yellow-400 italic">يرجى تسجيل الدخول لعرض الرسائل</span>`;
+            }
+        }
+        load();
+    </script>
+</body>
+</html>
