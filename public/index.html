@@ -2,52 +2,119 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>خزنة الرسائل الاحترافية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-Vault | الخزنة الذكية</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background: #080a0f; }
+        .glass { background: rgba(22, 27, 34, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item.active { background: linear-gradient(90deg, #3b82f633, transparent); border-right: 4px solid #3b82f6; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-[#0b0f19] text-slate-200 font-sans overflow-hidden h-screen">
+<body class="text-slate-300 h-screen overflow-hidden">
 
-    <div id="site-login-screen" class="fixed inset-0 bg-[#0b0f19] z-50 flex items-center justify-center">
-        <div class="bg-[#161b22] p-8 rounded-2xl border border-slate-700 w-96 text-center">
-            <i class="fas fa-vault text-5xl text-blue-500 mb-4"></i>
-            <h2 class="text-2xl font-bold mb-6">الدخول للخزنة</h2>
-            <input type="password" id="site-pass" placeholder="كلمة المرور" class="w-full bg-[#0d1117] border border-slate-600 p-3 rounded-lg mb-4 text-center">
-            <button onclick="loginToSite()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg font-bold">فتح</button>
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#080a0f]">
+        <div class="glass p-10 rounded-3xl w-full max-w-md text-center shadow-2xl">
+            <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_#2563eb]">
+                <i class="fas fa-shield-halved text-3xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">G-VAULT</h1>
+            <p class="text-slate-500 mb-8">أدخل مفتاح الخزنة للوصول</p>
+            <input type="password" id="site-pass" class="w-full bg-[#0d1117] border border-slate-700 p-4 rounded-xl mb-4 text-center text-xl tracking-[1em] focus:border-blue-500 outline-none transition" placeholder="••••">
+            <button onclick="loginToSite()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">فتح الخزنة</button>
         </div>
     </div>
 
     <div class="flex h-full">
-        <aside class="w-64 bg-[#161b22] border-l border-slate-800 p-4 flex flex-col">
-            <h2 class="text-blue-400 font-bold mb-6 border-b border-slate-700 pb-2">الحسابات المربوطة</h2>
-            <div id="accounts-list" class="flex-grow space-y-2 overflow-y-auto">
+        <aside class="w-72 glass border-l-0 border-r border-slate-800 flex flex-col">
+            <div class="p-6">
+                <div class="flex items-center gap-3 text-white font-bold text-xl">
+                    <i class="fas fa-vault text-blue-500"></i>
+                    <span>الخزنة المركزية</span>
                 </div>
-            <button onclick="addNewAccount()" class="mt-4 bg-slate-700 hover:bg-slate-600 p-2 rounded text-sm">
-                <i class="fas fa-plus ml-1"></i> ربط حساب جديد
-            </button>
+            </div>
+            
+            <div id="accounts-list" class="flex-grow py-4 overflow-y-auto">
+                </div>
+
+            <div class="p-4">
+                <button onclick="showLinkAccountModal()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 p-3 rounded-xl text-sm font-bold transition">
+                    <i class="fas fa-plus-circle"></i> ربط حساب جديد
+                </button>
+            </div>
         </aside>
 
-        <main class="flex-grow flex flex-col">
-            <header class="bg-[#161b22] p-4 border-b border-slate-800 flex justify-between items-center">
-                <h1 id="current-view-title" class="font-bold">يرجى اختيار حساب</h1>
-                <div id="loader" class="hidden"><i class="fas fa-spinner fa-spin"></i></div>
+        <main class="flex-grow flex flex-col relative">
+            <header class="h-20 flex items-center justify-between px-8 border-b border-slate-800 glass">
+                <div id="active-account-info" class="font-bold text-white">اختر حساباً للبدء</div>
+                <div class="flex items-center gap-4">
+                    <button onclick="loadAccounts()" class="text-slate-400 hover:text-white"><i class="fas fa-sync-alt"></i></button>
+                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                </div>
             </header>
-            
-            <div id="emails-area" class="flex-grow overflow-y-auto p-4 space-y-3">
-                <div class="text-center text-slate-500 mt-20">لا يوجد بيانات لعرضها</div>
+
+            <div id="emails-area" class="flex-grow p-6 overflow-y-auto space-y-4">
+                <div class="flex flex-col items-center justify-center h-full opacity-20">
+                    <i class="fas fa-envelope-open-text text-8xl mb-4"></i>
+                    <p class="text-xl">لا توجد رسائل للعرض</p>
+                </div>
             </div>
         </main>
     </div>
 
-    <div id="msg-modal" class="fixed inset-0 bg-black/80 hidden z-40 p-10 overflow-y-auto">
-        <div class="bg-[#161b22] max-w-4xl mx-auto p-8 rounded-2xl relative">
-            <button onclick="closeModal()" class="absolute top-4 left-4 text-2xl">&times;</button>
-            <div id="msg-body" class="mt-6 leading-relaxed"></div>
+    <div id="link-modal" class="fixed inset-0 bg-black/90 z-[150] hidden flex items-center justify-center p-4">
+        <div class="glass p-8 rounded-3xl w-full max-w-lg shadow-2xl relative">
+            <button onclick="hideModal('link-modal')" class="absolute top-6 left-6 text-slate-500 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-bold text-white mb-6"><i class="fab fa-google ml-2 text-red-500"></i>ربط حساب Gmail</h2>
+            
+            <div class="space-y-6">
+                <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
+                    <p class="text-sm text-blue-400 leading-relaxed">
+                        1. اضغط على الزر بالأسفل لفتح صفحة جوجل.<br>
+                        2. سجل دخولك وانسخ "كود التحقق" الذي سيظهر لك.<br>
+                        3. الصق الكود في المربع بالأسفل.
+                    </p>
+                </div>
+                
+                <button id="google-auth-btn" class="w-full bg-white text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-200 transition">
+                    <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-5" alt="">
+                    فتح صفحة جوجل
+                </button>
+
+                <div class="pt-4 border-t border-slate-800">
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">كود التحقق من جوجل</label>
+                    <input type="text" id="google-code" class="w-full bg-[#0d1117] border border-slate-700 p-4 rounded-xl focus:border-blue-500 outline-none" placeholder="الصق الكود هنا...">
+                </div>
+
+                <button onclick="confirmGoogleCode()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition">تأكيد الحساب</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="read-modal" class="fixed inset-0 bg-black/95 z-[150] hidden overflow-y-auto">
+        <div class="min-h-screen flex items-center justify-center p-4 md:p-10">
+            <div class="glass w-full max-w-5xl rounded-3xl shadow-2xl relative flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+                    <h3 id="msg-subject" class="text-xl font-bold text-white truncate pr-10">العنوان</h3>
+                    <button onclick="hideModal('read-modal')" class="text-slate-400 hover:text-white"><i class="fas fa-times text-2xl"></i></button>
+                </div>
+                <div id="msg-body" class="p-8 overflow-y-auto text-slate-300 leading-relaxed whitespace-pre-wrap font-mono text-sm">
+                    </div>
+            </div>
         </div>
     </div>
 
     <script>
         let selectedEmail = "";
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         async function loginToSite() {
             const password = document.getElementById('site-pass').value;
@@ -57,9 +124,9 @@
                 body: JSON.stringify({ password })
             });
             if (res.ok) {
-                document.getElementById('site-login-screen').classList.add('hidden');
+                hideModal('login-screen');
                 loadAccounts();
-            } else alert("كلمة المرور خطأ!");
+            } else alert("🚨 مفتاح الخزنة غير صحيح!");
         }
 
         async function loadAccounts() {
@@ -67,50 +134,71 @@
             const accounts = await res.json();
             const list = document.getElementById('accounts-list');
             list.innerHTML = accounts.map(acc => `
-                <div onclick="selectAccount('${acc.email}')" class="p-3 bg-[#0d1117] rounded-lg border border-slate-700 hover:border-blue-500 cursor-pointer transition">
-                    <div class="text-xs text-slate-400 truncate">${acc.email}</div>
+                <div onclick="selectAccount('${acc.email}', this)" class="sidebar-item px-6 py-4 flex items-center gap-4 cursor-pointer hover:bg-slate-800/50 transition border-r-4 border-transparent">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
+                        ${acc.email[0].toUpperCase()}
+                    </div>
+                    <div class="flex-grow overflow-hidden text-sm font-bold text-slate-400 truncate">${acc.email}</div>
                 </div>
             `).join('');
         }
 
-        async function selectAccount(email) {
+        async function selectAccount(email, el) {
             selectedEmail = email;
-            document.getElementById('current-view-title').innerText = email;
-            document.getElementById('loader').classList.remove('hidden');
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('active-account-info').innerText = email;
+            
+            const area = document.getElementById('emails-area');
+            area.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-circle-notch fa-spin text-4xl text-blue-500"></i></div>`;
+            
             const res = await fetch(`/api/emails/${email}`);
             const data = await res.json();
-            document.getElementById('loader').classList.add('hidden');
             
-            document.getElementById('emails-area').innerHTML = data.map(e => `
-                <div onclick="readEmail('${e.id}')" class="bg-[#161b22] p-4 rounded-xl border border-slate-800 hover:bg-slate-800 transition cursor-pointer">
-                    <div class="text-blue-400 text-xs mb-1 font-bold">${e.from}</div>
-                    <div class="font-bold text-slate-100">${e.subject}</div>
-                    <div class="text-slate-400 text-sm truncate">${e.snippet}</div>
+            area.innerHTML = data.map(e => `
+                <div onclick="readEmail('${e.id}', '${e.subject.replace(/'/g, "\\'")}')" class="glass p-5 rounded-2xl hover:bg-slate-800/40 border border-slate-800 cursor-pointer transition-all group active:scale-[0.98]">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-blue-400 text-xs font-bold uppercase tracking-wider">${e.from.split('<')[0]}</span>
+                        <span class="text-[10px] text-slate-600 font-mono italic">ID: ${e.id}</span>
+                    </div>
+                    <div class="text-white font-bold mb-1 group-hover:text-blue-400 transition">${e.subject}</div>
+                    <div class="text-slate-500 text-xs line-clamp-1">${e.snippet}</div>
                 </div>
             `).join('');
         }
 
-        async function readEmail(id) {
+        async function readEmail(id, subject) {
             const res = await fetch(`/api/email-detail/${selectedEmail}/${id}`);
             const data = await res.json();
+            document.getElementById('msg-subject').innerText = subject;
             document.getElementById('msg-body').innerText = data.body;
-            document.getElementById('msg-modal').classList.remove('hidden');
+            showModal('read-modal');
         }
 
-        function closeModal() { document.getElementById('msg-modal').classList.add('hidden'); }
-
-        async function addNewAccount() {
+        async function showLinkAccountModal() {
             const res = await fetch('/auth/google/url');
             const { url } = await res.json();
-            window.open(url, '_blank');
-            const code = prompt("سجل دخول في النافذة الجديدة، ثم الصق الكود هنا:");
-            if (code) {
-                await fetch('/api/confirm-google', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ code })
-                });
+            document.getElementById('google-auth-btn').onclick = () => window.open(url, '_blank');
+            showModal('link-modal');
+        }
+
+        async function confirmGoogleCode() {
+            const code = document.getElementById('google-code').value;
+            if(!code) return alert("يرجى وضع الكود أولاً");
+            
+            const res = await fetch('/api/confirm-google', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code })
+            });
+            
+            if(res.ok) {
+                alert("✅ تم ربط الحساب بنجاح!");
+                hideModal('link-modal');
+                document.getElementById('google-code').value = "";
                 loadAccounts();
+            } else {
+                alert("❌ كود خاطئ أو منتهي الصلاحية");
             }
         }
     </script>
